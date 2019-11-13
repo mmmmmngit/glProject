@@ -14,6 +14,8 @@ function main(){
         console.error("webgl2 has been deleted.");
         return;
     }
+
+    const rect = canvas.getBoundingClientRect();
     
     //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     //gl.enable(gl.BLEND);
@@ -41,13 +43,17 @@ function main(){
         precision highp float;
 
         in vec4 vColor;
+
         uniform float timer;
+        uniform vec2 mouse;
 
         out vec4 fColor;
 
         void main() {
             vec3 t = gl_FragCoord.xyz;
-            fColor = vec4(t.x/512.0+7.0*sin(timer)*sin(timer)*sin(timer),t.y/512.0+3.0*cos(timer)*cos(timer)*cos(timer),mod(timer,255.0)/255.0,1.0);
+            vec2 m = vec2(mouse.x/512.0, -mouse.y/512.0);
+            
+            fColor = vec4(m.x,m.y,mod(timer,255.0)/255.0,1.0);
         }
     `;
 //compile
@@ -81,9 +87,15 @@ function main(){
     const vao = create_vao([vData,cData],attLocation,attStride,iData);
 
     const timer = gl.getUniformLocation(program, "timer");
+    const mouse = gl.getUniformLocation(program, "mouse");
 
     const startTime = Date.now();
-    let sec;
+    let sec,m={x:0,y:0};
+
+    canvas.addEventListener("mousemove", function(e){
+        m.x = e.clientX - rect.left;
+        m.y = e.clientY - rect.top;
+      });
 
     window.requestAnimationFrame(render);
 
@@ -97,6 +109,7 @@ function main(){
         gl.viewport(0, 0, width, height);
 
         gl.uniform1f(timer, sec); 
+        gl.uniform2f(mouse, m.x,m.y); 
 
         gl.bindVertexArray(vao);
         gl.drawElements(gl.TRIANGLES, iData.length, gl.UNSIGNED_SHORT, 0);
