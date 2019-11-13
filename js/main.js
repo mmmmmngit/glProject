@@ -47,7 +47,7 @@ function main(){
 
         void main() {
             vec3 t = gl_FragCoord.xyz;
-            fColor = vec4(t.x/400.0,t.y/400.0,t.z+timer/10.0,1.0);
+            fColor = vec4(t.x/512.0,t.y/512.0,t.z+sin(timer),1.0);
         }
     `;
 //compile
@@ -80,19 +80,23 @@ function main(){
     const attStride=[3,4];
     const vao = create_vao([vData,cData],attLocation,attStride,iData);
 
+    const timer = gl.getUniformLocation(program, "timer");
 
-    gl.bindVertexArray(vao);
-    gl.drawElements(gl.TRIANGLES, iData.length, gl.UNSIGNED_SHORT, 0);
-    gl.flush();
+    const startTime = Date.now();
+    let sec;
 
     window.requestAnimationFrame(render);
 
     let r=0,g=0,b=0;
     function render(){
+        sec = (Date.now() - startTime) / 1000;
+
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.clearDepth(1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.viewport(0, 0, width, height);
+
+        gl.uniform1f(timer, sec); 
 
         gl.bindVertexArray(vao);
         gl.drawElements(gl.TRIANGLES, iData.length, gl.UNSIGNED_SHORT, 0);
