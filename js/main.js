@@ -47,7 +47,7 @@ function main(){
 
         void main() {
             vec3 t = gl_FragCoord.xyz;
-            fColor = vec4(t.x/512.0,t.y/512.0,t.z+sin(timer),1.0);
+            fColor = vec4(t.x/512.0+7.0*sin(timer)*sin(timer)*sin(timer),t.y/512.0+3.0*cos(timer)*cos(timer)*cos(timer),mod(timer,255.0)/255.0,1.0);
         }
     `;
 //compile
