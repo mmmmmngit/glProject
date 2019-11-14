@@ -5,7 +5,7 @@ window.addEventListener("load",()=>{
 
 function main(){
     const canvas = document.getElementById("canvas");
-    const width = 1024,height=1024;
+    const width = 512,height=512;
     canvas.width = width;
     canvas.height = height;
     const gl = canvas.getContext("webgl2");
@@ -49,13 +49,15 @@ function main(){
         uniform vec2 mouse;
 
         out vec4 fColor;
-
+        vec3 col(float t){
+            return vec3(t,t,t);
+        }
         void main() {
-            int depth = min(int((timer+5.0)*timer),1000);
+            int depth = 200;
             vec2 point= (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
             vec2 mouse = vec2(mouse.x/resolution.x, mouse.y/resolution.y);
 
-            vec2 p = point*2.0;//(timer*timer)+mouse;//+((mouse/timer+vec2(-0.5,-0.5))*vec2(-2.0,2.0));
+            vec2 p = (point+vec2(-0.5,0.5))/timer;
             vec2 z = vec2(0.0, 0.0);
             int i;
 
@@ -64,8 +66,8 @@ function main(){
                 z = vec2(z.x * z.x - z.y * z.y + p.x , 2.0 * z.x * z.y + p.y) ;
             }
             
-            float t = float(i)/float(depth);
-            fColor = vec4(1.0-t,t,abs(pow(sin(2.0*timer),10.0)),1.0);
+            vec3 t = col(float(i)/float(depth));//float(i)/float(depth);
+            fColor = vec4(t,1.0);
         }
     `;
 //compile
