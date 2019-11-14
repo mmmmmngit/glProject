@@ -44,16 +44,28 @@ function main(){
 
         in vec4 vColor;
 
+        uniform vec2 resolution;
         uniform float timer;
         uniform vec2 mouse;
 
         out vec4 fColor;
 
         void main() {
-            vec3 t = gl_FragCoord.xyz;
-            vec2 m = vec2(mouse.x/512.0, -mouse.y/512.0);
+            const int depth = 100;
+            vec2 point= (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
+            vec2 mouse = vec2(mouse.x/resolution.x, mouse.y/resolution.y);
+
+            vec2 p = point/timer+(mouse+vec2(-0.5,-0.5))*vec2(-2.0,2.0);
+            vec2 z = vec2(0.0, 0.0);
+            int i;
+
+            for(i=0;i<depth;i++){
+                if(length(z)>2.0){break;}
+                z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x + z.y) + p.x*p.y;
+            }
             
-            fColor = vec4(m.x,m.y,mod(timer,255.0)/255.0,1.0);
+            float t = float(i)/float(depth);
+            fColor = vec4(t,t,t,1.0);
         }
     `;
 //compile
@@ -86,6 +98,7 @@ function main(){
     const attStride=[3,4];
     const vao = create_vao([vData,cData],attLocation,attStride,iData);
 
+    gl.uniform2f(gl.getUniformLocation(program, "resolution"), width,height); 
     const timer = gl.getUniformLocation(program, "timer");
     const mouse = gl.getUniformLocation(program, "mouse");
 
