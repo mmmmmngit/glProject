@@ -47,17 +47,18 @@ function main(){
         uniform vec2 resolution;
         uniform float timer;
         uniform vec2 mouse;
+        uniform float zoom;
 
         out vec4 fColor;
         vec3 col(float t){
             return vec3(t,t,t);
         }
         void main() {
-            int depth = 200;
+            int depth = 1000;
             vec2 point= (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
-            vec2 mouse = vec2(mouse.x/resolution.x, mouse.y/resolution.y);
+            vec2 m = vec2(mouse.x,-mouse.y)/resolution+vec2(-0.5,0.5);
 
-            vec2 p = (point+vec2(-0.5,0.5))/timer;
+            vec2 p = (point+vec2(-0.5,0.0));
             vec2 z = vec2(0.0, 0.0);
             int i;
 
@@ -66,7 +67,7 @@ function main(){
                 z = vec2(z.x * z.x - z.y * z.y + p.x , 2.0 * z.x * z.y + p.y) ;
             }
             
-            vec3 t = col(float(i)/float(depth));//float(i)/float(depth);
+            vec3 t = col(float(i)/float(depth));
             fColor = vec4(t,1.0);
         }
     `;
@@ -101,16 +102,31 @@ function main(){
     const vao = create_vao([vData,cData],attLocation,attStride,iData);
 
     gl.uniform2f(gl.getUniformLocation(program, "resolution"), width,height); 
-    const timer = gl.getUniformLocation(program, "timer");
-    const mouse = gl.getUniformLocation(program, "mouse");
+    const utimer = gl.getUniformLocation(program, "timer");
+    const umouse = gl.getUniformLocation(program, "mouse");
+    const uzoom = gl.getUniformLocation(program, "zoom");
 
     const startTime = Date.now();
-    let sec,m={x:0,y:0};
+    let sec=0,m={x:width/2,y:height/2},zoom=1;
 
     canvas.addEventListener("mousemove", function(e){
         m.x = e.clientX - rect.left;
         m.y = e.clientY - rect.top;
-      });
+        //console.log(m.x/width-0.5,m.y/height-0.5)
+    });
+    canvas.addEventListener("mousedown", function(e){
+        switch(e.button){
+            case 0:
+                zoom*=2;
+                break;
+            case 2:
+                zoom/=2;
+                break;
+        }
+        console.log(zoom)
+    });
+    canvas.addEventListener('contextmenu',function(e){e.stopPropagation();},true);
+    
 
     window.requestAnimationFrame(render);
 
@@ -123,12 +139,14 @@ function main(){
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.viewport(0, 0, width, height);
 
-        gl.uniform1f(timer, sec); 
-        gl.uniform2f(mouse, m.x,m.y); 
+        gl.uniform1f(utimer, sec); 
+        gl.uniform2f(umouse, m.x,m.y); 
+        gl.uniform1f(uzoom, zoom); 
 
         gl.bindVertexArray(vao);
         gl.drawElements(gl.TRIANGLES, iData.length, gl.UNSIGNED_SHORT, 0);
         gl.flush();
+        document.getElementById("snap").innerText=sec;
         window.requestAnimationFrame(render);
     }
     //////////////////////////////////////////////////////////////////////////////////////////
