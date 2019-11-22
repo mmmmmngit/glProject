@@ -4,8 +4,8 @@ precision highp float;
 in vec4 vColor;
 
 uniform vec2 resolution;
-uniform float u_time;
-uniform vec2 u_mouse;
+uniform float timer;
+uniform vec2 mouse;
 uniform float zoom;
 
 out vec4 fColor;

@@ -1,12 +1,9 @@
 'use strict';
+import vShaderSource from 'mandelbrot.vert';
+import fShaderSource from 'mandelbrot.frag';
+
 window.addEventListener("load",()=>{
-    let xml = new XMLHttpRequest();
-    xml.open("GET", './glsl/mandelbrot.vert',false);
-    xml.overrideMimeType('text/plain; charset=UTF-8');
-    xml.send();
-    
-    let v=xml.responseText;
-    main(v,v);
+    main();
 });
 
 function main(vShaderSource,fShaderSource){
