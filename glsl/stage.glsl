@@ -25,7 +25,7 @@ struct Camera{
     float fov;
 };
 
-float hsv2rgb(vec3 hsv){
+vec3 hsv2rgb(vec3 hsv){
     return ((clamp(abs(fract(hsv.x+vec3(0,2,1)/3.)*6.-3.)-1.,0.,1.)-1.)*hsv.y+1.)*hsv.z;
 }
 vec4 minVec4(vec4 a, vec4 b) {
@@ -72,22 +72,11 @@ vec3 normal(vec3 p){
     ));
 }
 vec4 sceneColor(vec3 p) {
-    return minVec4(
-        // 3 * 6 / 2 = 9
-        vec4(hsv2rgb(vec3((p.z + p.x) / 9.0, 1.0, 1.0)), sphereDist(p, 1.0)), 
-        vec4(vec3(0.5) * checkeredPattern(p), floorDist(p))
-    );
-}
-vec4 sceneColor(vec3 p) {
-  return minVec4(
-    // 3 * 6 / 2 = 9
-    vec4(hsv2rgb(vec3((p.z + p.x) / 9.0, 1.0, 1.0)), sphereDist(p, 1.0)), 
-    vec4(vec3(0.5) * checkeredPattern(p), floorDist(p))
-  );
+    return vec4(hsv2rgb(vec3((p.z + p.x) / 9.0, 1.0, 1.0)), sd_sphere(p, 1.0));
 }
 
 void main() { 
-    const vec3 lightDir = vec3(0.2, 0.3, 1.0);
+    const vec3 lightDir = vec3(0.1, 0.1, 1.0);
     vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
     
     
@@ -105,7 +94,7 @@ void main() {
     
     float t=0.0,d;
     for(int i = 0; i < 64; i++){
-        d = distFunc(r.pos);
+        d = sceneColor(r.pos).w;
         if(d<acc)break;
         t += d;
         r.pos = c.pos + t * r.dir;
@@ -113,9 +102,9 @@ void main() {
     
     // hit check
     if(abs(d) < acc){
-        vec3 normal = normal(r.pos,1.0);
-        float diff = clamp(dot(lightDir, normal), 0.0, 1.0);
-        fColor  = vec4(vec3(diff), 1.0);
+        vec4 normal = sceneColor(r.pos);
+        float diff = clamp(dot(lightDir, normal.xyz), 0.0, 1.0);
+        fColor  = vec4(normal.xyz, 1.0);
     }else{
         float c = clamp(-p.y+0.2,0.3,1.0);
         fColor  = vec4(vec3(c,c,1.0), 1.0);
