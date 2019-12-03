@@ -9,7 +9,7 @@ uniform vec2 u_mouse;
 
 out vec4 fColor;
 
-const float acc=0.0001;
+const float acc=0.001;
 const float PI = 3.14159265;
 
 struct Ray{
@@ -25,6 +25,12 @@ struct Camera{
     float fov;
 };
 
+float hsv2rgb(vec3 hsv){
+    return ((clamp(abs(fract(hsv.x+vec3(0,2,1)/3.)*6.-3.)-1.,0.,1.)-1.)*hsv.y+1.)*hsv.z;
+}
+vec4 minVec4(vec4 a, vec4 b) {
+    return (a.a < b.a) ? a : b;
+}
 float sd_sphere( vec3 p, float s ){
     return length(p)-s;
 }
@@ -33,6 +39,11 @@ float sd_box( vec3 p, vec3 b ,float r)
     vec3 q = abs(p) - b;
     return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0)-r;
 }
+float sd_plane( vec3 p, vec4 n )
+{
+    // n must be normalized
+    return dot(p,n.xyz) + n.w;
+}
 
 
 vec3 op_trans(vec3 p){
@@ -40,21 +51,19 @@ vec3 op_trans(vec3 p){
     return mod(p, t) - t/2.0;
 }
 float op_uni( float d1, float d2 ) {return min(d1,d2);}
-
 float op_sub( float d1, float d2 ) {return max(-d1,d2);}
-
 float op_inter( float d1, float d2 ) {return max(d1,d2);}
+float op_suni( float d1, float d2, float k ) {float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );return mix( d2, d1, h ) - k*h*(1.0-h);}
+float op_ssub( float d1, float d2, float k ) {float h = clamp( 0.5 - 0.5*(d2+d1)/k, 0.0, 1.0 );return mix( d2, -d1, h ) + k*h*(1.0-h);}
+float op_sinter( float d1, float d2, float k ){float h = clamp( 0.5 - 0.5*(d2-d1)/k, 0.0, 1.0 );return mix( d2, d1, h ) + k*h*(1.0-h);}
 
 float distFunc(vec3 p){
-    float sp1 = sd_sphere(op_trans(p),1.0);
-
-    float box1= sd_box(op_trans(p),vec3(2.0),.0);
-
-    float obj1 = min(sp1,box1);
-    return op_inter(obj1,sp1);
+    float sp1 = sd_sphere(p-vec3(1.5,0.0,0.0),1.0);
+    float box1= sd_box(p-vec3(-1.5,0.0,0.0),vec3(1.0),.0);
+    float plane1 = sd_plane(p-vec3(0.0,5.0,0.0),vec4(1.0,1.0,1.0,1.0));
+    return op_uni(sp1,box1);
 }
-
-vec3 normal(vec3 p, float s ){
+vec3 normal(vec3 p){
     float d = acc;
     return normalize(vec3(
         distFunc(p + vec3(  d, 0.0, 0.0)) - distFunc(p + vec3(0.0, 0.0, 0.0)),
@@ -62,16 +71,28 @@ vec3 normal(vec3 p, float s ){
         distFunc(p + vec3(0.0, 0.0,   d)) - distFunc(p + vec3(0.0, 0.0,  0.0))
     ));
 }
+vec4 sceneColor(vec3 p) {
+    return minVec4(
+        // 3 * 6 / 2 = 9
+        vec4(hsv2rgb(vec3((p.z + p.x) / 9.0, 1.0, 1.0)), sphereDist(p, 1.0)), 
+        vec4(vec3(0.5) * checkeredPattern(p), floorDist(p))
+    );
+}
+vec4 sceneColor(vec3 p) {
+  return minVec4(
+    // 3 * 6 / 2 = 9
+    vec4(hsv2rgb(vec3((p.z + p.x) / 9.0, 1.0, 1.0)), sphereDist(p, 1.0)), 
+    vec4(vec3(0.5) * checkeredPattern(p), floorDist(p))
+  );
+}
 
-
-void main() {
-    
+void main() { 
     const vec3 lightDir = vec3(0.2, 0.3, 1.0);
     vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
     
     
     Camera c;
-    c.pos = vec3(0.0, 0.0, u_time*5.0);   // カメラの位置
+    c.pos = vec3(0.0, 0.0, 5.0);   // カメラの位置
     c.dir = vec3(0.0,  0.0 ,-1.0);  // カメラの向き(視線)
     c.up  = vec3(0.0,  1.0,  0.0);// カメラの上方向
     c.side = cross(c.dir, c.up);    // 外積を使って横方向を算出
@@ -96,7 +117,8 @@ void main() {
         float diff = clamp(dot(lightDir, normal), 0.0, 1.0);
         fColor  = vec4(vec3(diff), 1.0);
     }else{
-        fColor  = vec4(vec3(0.0), 1.0);
+        float c = clamp(-p.y+0.2,0.3,1.0);
+        fColor  = vec4(vec3(c,c,1.0), 1.0);
     }
 
 }
