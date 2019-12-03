@@ -36,7 +36,7 @@ float sd_box( vec3 p, vec3 b ,float r)
 
 
 vec3 op_trans(vec3 p){
-    float t=10.0;
+    float t=4.0;
     return mod(p, t) - t/2.0;
 }
 float op_uni( float d1, float d2 ) {return min(d1,d2);}
@@ -54,12 +54,12 @@ float distFunc(vec3 p){
     return op_inter(obj1,sp1);
 }
 
-vec3 normal(vec3 p, float s ){
+vec3 normal(vec3 p){
     float d = acc;
     return normalize(vec3(
-        distFunc(p + vec3(  d, 0.0, 0.0)) - distFunc(p + vec3(0.0, 0.0, 0.0)),
-        distFunc(p + vec3(0.0,   d, 0.0)) - distFunc(p + vec3(0.0,  0.0, 0.0)),
-        distFunc(p + vec3(0.0, 0.0,   d)) - distFunc(p + vec3(0.0, 0.0,  0.0))
+        distFunc(p + vec3(  d, 0.0, 0.0)) - distFunc(p + vec3(-d, 0.0, 0.0)),
+        distFunc(p + vec3(0.0,   d, 0.0)) - distFunc(p + vec3(0.0,  -d, 0.0)),
+        distFunc(p + vec3(0.0, 0.0,   d)) - distFunc(p + vec3(0.0, 0.0,  -d))
     ));
 }
 
@@ -83,7 +83,7 @@ void main() {
     r.dir = normalize(sin(c.fov)*p.x * c.side + sin(c.fov)*p.y * c.up + cos(c.fov)*c.dir*c.depth);
     
     float t=0.0,d;
-    for(int i = 0; i < 64; i++){
+    for(int i = 0; i < 128; i++){
         d = distFunc(r.pos);
         if(d<acc)break;
         t += d;
@@ -92,7 +92,7 @@ void main() {
     
     // hit check
     if(abs(d) < acc){
-        vec3 normal = normal(r.pos,1.0);
+        vec3 normal = normal(r.pos);
         float diff = clamp(dot(lightDir, normal), 0.0, 1.0);
         fColor  = vec4(vec3(diff), 1.0);
     }else{
